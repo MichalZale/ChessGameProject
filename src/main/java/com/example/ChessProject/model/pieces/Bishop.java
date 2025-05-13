@@ -4,9 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.ChessProject.model.*;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+
+@JsonTypeName("bishop")
 
 public class Bishop extends Piece {
-    public Bishop(Color c, Position p) {
+    public Bishop(
+            @JsonProperty("color") Color c, 
+            @JsonProperty("column") Position p) {
         super(c, p);
     }
 

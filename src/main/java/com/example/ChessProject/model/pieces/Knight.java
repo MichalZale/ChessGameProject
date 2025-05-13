@@ -4,9 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.ChessProject.model.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+
+@JsonTypeName("knight")
 
 public class Knight extends Piece {
-    public Knight(Color c, Position p) {
+    public Knight(
+            @JsonProperty("color") Color c, 
+            @JsonProperty("column") Position p) {
         super(c, p);
     }
 
@@ -30,5 +36,7 @@ public class Knight extends Piece {
         }
         return moves;
     }
+
+    
 
 }

@@ -2,8 +2,13 @@ package com.example.ChessProject.model.pieces;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.example.ChessProject.model.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+
+@JsonTypeName("rook")
 
 public class Rook extends Piece {
     private boolean hasMoved;
@@ -12,7 +17,9 @@ public class Rook extends Piece {
         return hasMoved;
     }
 
-    public Rook(Color c, Position p) {
+    public Rook(
+            @JsonProperty("color") Color c, 
+            @JsonProperty("column") Position p) {
         super(c, p);
     }
 
@@ -42,6 +49,24 @@ public class Rook extends Piece {
             }
         }
         return moves;
+    }
+
+    public void setHasMoved(boolean b){
+        this.hasMoved = b;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        Rook rook = (Rook) o;
+        return hasMoved == rook.hasMoved();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), hasMoved);
     }
 
 }

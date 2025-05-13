@@ -1,5 +1,9 @@
 package com.example.ChessProject.model;
 
+import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Move {
     public enum MoveType {
         NORMAL,
@@ -14,10 +18,13 @@ public class Move {
     private Position to;
     private Piece promotionTo;
     private MoveType moveType;
-    public Move(Position from, Position to, Piece promotion, MoveType moveType){
+    public Move(@JsonProperty("from") Position from,
+            @JsonProperty("to") Position to,
+            @JsonProperty("promotionTo") Piece promotionTo, // Make sure Piece is Jackson-ready (polymorphism)
+            @JsonProperty("moveType") MoveType moveType){
         this.from=from;
         this.to=to;
-        this.promotionTo=promotion;
+        this.promotionTo=promotionTo;
         this.moveType=moveType;
     }
 
@@ -33,4 +40,20 @@ public class Move {
     public Position getTo(){return to;}
     public Piece getPromotionTo(){return this.promotionTo;}
     public MoveType getMoveType(){return this.moveType;}
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Move move = (Move) o;
+        return Objects.equals(from, move.from) &&
+               Objects.equals(to, move.to) &&
+               Objects.equals(promotionTo, move.promotionTo) && // Handles null promotionTo
+               moveType == move.moveType;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(from, to, promotionTo, moveType);
+    }
 }

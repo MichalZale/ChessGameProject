@@ -1,8 +1,13 @@
 package com.example.ChessProject.model.pieces;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.example.ChessProject.model.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+
+@JsonTypeName("pawn")
 
 public class Pawn extends Piece{
     private boolean hasMoved;
@@ -10,7 +15,9 @@ public class Pawn extends Piece{
     public boolean hasMoved(){return hasMoved;}
     public boolean justDoubleMoved(){return justDoubleMoved;}
 
-    public Pawn(Color c, Position p){
+    public Pawn(
+            @JsonProperty("color") Color c, 
+            @JsonProperty("column") Position p){
         super(c, p);
     }
 
@@ -22,13 +29,17 @@ public class Pawn extends Piece{
         return pawn;
     }
 
+    public void setHasMoved(boolean b){
+        this.hasMoved=b;
+    }
+
     @Override
     public List<Position> getPseudoMoves(GameState state){
         List<Position> moves = new ArrayList<>();
         Board board = state.getBoard();
         int dir  = color==Color.WHITE ? -1 : 1;
         int start = color==Color.WHITE ? 6 : 1;
-    
+
         Position one = position.offset(dir,0);
         if(board.isInside(one) && board.isEmpty(one)){
             moves.add(one);
@@ -41,6 +52,7 @@ public class Pawn extends Piece{
             if(t!=null && t.getColor()!=color) moves.add(dl);
             if(state.getEnPassant()!=null && state.getEnPassant().equals(dl)) moves.add(dl);
         }
+
         Position dr = position.offset(dir,1);
         if(board.isInside(dr)){
             Piece t = board.getPiece(dr);
@@ -48,6 +60,20 @@ public class Pawn extends Piece{
             if(state.getEnPassant()!=null && state.getEnPassant().equals(dr)) moves.add(dr);
         }
         return moves;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false; // Compare base class fields (color, position)
+        Pawn pawn = (Pawn) o;
+        return hasMoved == pawn.hasMoved && justDoubleMoved == pawn.justDoubleMoved;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), hasMoved, justDoubleMoved);
     }
 
 }

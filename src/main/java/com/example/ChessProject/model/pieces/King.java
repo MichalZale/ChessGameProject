@@ -2,13 +2,20 @@ package com.example.ChessProject.model.pieces;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.example.ChessProject.model.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+
+@JsonTypeName("king")
 
 public class King extends Piece {
     private boolean hasMoved;
 
-    public King(Color c, Position p) {
+    public King(
+            @JsonProperty("color") Color c, 
+            @JsonProperty("column") Position p) {
         super(c, p);
     }
 
@@ -49,6 +56,24 @@ public class King extends Piece {
                 moves.add(position.offset(0, -2));
         }
         return moves;
+    }
+
+    public void setHasMoved(boolean b){
+        this.hasMoved = b;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false; 
+        King king = (King) o;
+        return hasMoved == king.hasMoved();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), hasMoved);
     }
 
 }
