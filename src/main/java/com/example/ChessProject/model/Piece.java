@@ -9,6 +9,10 @@ public abstract class Piece {
         this.position = p;
     }
 
+    public void setPosition(Position pos){
+        this.position=pos;
+    }
+
     public abstract List<Position> getPseudoMoves(GameState gameState);
     public Color getColor(){return color;}
     public Position getPosition(){return position;}
