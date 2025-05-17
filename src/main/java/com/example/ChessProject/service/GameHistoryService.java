@@ -7,12 +7,10 @@ public class GameHistoryService {
 
     private final GameHistoryRepository repo;
 
-    /** Production constructor */
     public GameHistoryService() {
         this(new GameHistoryRepository());
     }
 
-    /** Testing / DI constructor */
     public GameHistoryService(GameHistoryRepository repo) {
         this.repo = repo;
     }
@@ -21,16 +19,21 @@ public class GameHistoryService {
         try {
             return repo.getHistoryByUser(userID);
         } catch (Exception e) {            // wraps SQLException etc.
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error retrieving game history for user " + userID, e);
         }
     }
 
     public void addGame(int userID, Game game) {
+        if (game == null) return;
+
+        List<Move> history = game.getGameHistory();
+        if (history == null) return;
+
         try {
-            String gameData = MoveListSerializer.serializeMoveList(game.getGameHistory());
+            String gameData = MoveListSerializer.serializeMoveList(history);
             repo.addGame(userID, gameData);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error adding game to history for user " + userID, e);
         }
     }
 }

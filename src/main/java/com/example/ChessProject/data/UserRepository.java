@@ -13,7 +13,7 @@ public class UserRepository {
                     CREATE TABLE IF NOT EXISTS users (
                       userID       INTEGER PRIMARY KEY AUTOINCREMENT,
                       username     TEXT UNIQUE NOT NULL,
-                      passwdHash   TEXT NOT NULL,
+                      passwordHash TEXT NOT NULL,
                       email        TEXT NOT NULL
                     )""");
         } catch (SQLException e) {
@@ -22,7 +22,7 @@ public class UserRepository {
     }
 
     public User saveUser(User user) throws SQLException {
-        String sql = "INSERT INTO users(username,passwdHash,email) VALUES(?,?,?)";
+        String sql = "INSERT INTO users(username,passwordHash,email) VALUES(?,?,?)";
         try (Connection c = SQLiteConnector.connect();
                 PreparedStatement p = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             p.setString(1, user.getUsername());
@@ -41,7 +41,7 @@ public class UserRepository {
     }
 
     public Optional<User> findByUsername(String name) throws SQLException {
-        String sql = "SELECT userID,username,passwdHash,email FROM users WHERE username=?";
+        String sql = "SELECT userID,username,passwordHash,email FROM users WHERE username=?";
         try (Connection c = SQLiteConnector.connect();
                 PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, name);
@@ -50,7 +50,7 @@ public class UserRepository {
                     return Optional.empty();
                 User u = new User(
                         rs.getString("username"),
-                        rs.getString("passwdHash"),
+                        rs.getString("passwordHash"),
                         rs.getString("email"));
                 u.setUserID(rs.getInt("userID"));
                 return Optional.of(u);
@@ -59,7 +59,7 @@ public class UserRepository {
     }
 
     public void updateUser(User u) throws SQLException {
-        String sql = "UPDATE users SET username=?,passwdHash=?,email=? WHERE userID=?";
+        String sql = "UPDATE users SET username=?,passwordHash=?,email=? WHERE userID=?";
         try (Connection c = SQLiteConnector.connect();
                 PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, u.getUsername());

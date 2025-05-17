@@ -22,7 +22,7 @@ public class GameHistoryRepositoryTest {
                     CREATE TABLE users (
                       userID       INTEGER PRIMARY KEY AUTOINCREMENT,
                       username     TEXT UNIQUE NOT NULL,
-                      passwdHash   TEXT NOT NULL,
+                      passwordHash   TEXT NOT NULL,
                       email        TEXT NOT NULL
                     )""");
             s.executeUpdate("DROP TABLE IF EXISTS game_history");
