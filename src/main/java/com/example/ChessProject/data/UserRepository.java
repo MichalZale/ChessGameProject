@@ -26,7 +26,7 @@ public class UserRepository {
         try (Connection c = SQLiteConnector.connect();
                 PreparedStatement p = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             p.setString(1, user.getUsername());
-            p.setString(2, user.getPasswdHash());
+            p.setString(2, user.getPasswordHash());
             p.setString(3, user.getEmail());
             p.executeUpdate();
             try (ResultSet rs = p.getGeneratedKeys()) {
@@ -63,7 +63,7 @@ public class UserRepository {
         try (Connection c = SQLiteConnector.connect();
                 PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, u.getUsername());
-            p.setString(2, u.getPasswdHash());
+            p.setString(2, u.getPasswordHash());
             p.setString(3, u.getEmail());
             p.setInt(4, u.getUserID());
             p.executeUpdate();

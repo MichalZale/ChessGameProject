@@ -8,17 +8,15 @@ import com.example.ChessProject.data.*;
 
 public class GameHistoryRepositoryTest {
     private GameHistoryRepository gameHistoryRepository;
-    private UserRepository userRepository; // To ensure user exists for foreign key, though not strictly enforced by
-                                           // schema
+    private UserRepository userRepository;
 
     @BeforeEach
     void setUp() throws SQLException {
-        gameHistoryRepository = new GameHistoryRepository(); // Triggers static block
-        userRepository = new UserRepository(); // Triggers static block
+        gameHistoryRepository = new GameHistoryRepository();
+        userRepository = new UserRepository(); 
+        SQLiteConnector.setDatabaseUrlForTesting("jdbc:sqlite:data1.db");
 
         try (Connection c = SQLiteConnector.connect(); Statement s = c.createStatement()) {
-            // Clear and recreate users table for FK reference (though not enforced by
-            // schema)
             s.executeUpdate("DROP TABLE IF EXISTS users");
             s.executeUpdate("""
                     CREATE TABLE users (
@@ -27,7 +25,6 @@ public class GameHistoryRepositoryTest {
                       passwdHash   TEXT NOT NULL,
                       email        TEXT NOT NULL
                     )""");
-            // Clear and recreate game_history table
             s.executeUpdate("DROP TABLE IF EXISTS game_history");
             s.executeUpdate("""
                     CREATE TABLE game_history (
@@ -41,6 +38,7 @@ public class GameHistoryRepositoryTest {
 
     @AfterEach
     void tearDown() throws SQLException {
+        SQLiteConnector.setDatabaseUrlForTesting("jdbc:sqlite:data1.db");
         try (Connection c = SQLiteConnector.connect(); Statement s = c.createStatement()) {
             s.executeUpdate("DROP TABLE IF EXISTS game_history");
             s.executeUpdate("DROP TABLE IF EXISTS users");
@@ -49,13 +47,7 @@ public class GameHistoryRepositoryTest {
 
     @Test
     void addGameAndGetHistoryByUser_success() throws SQLException {
-        // Create a dummy user for context, though userID in game_history is just an
-        // INTEGER
-        // com.example.ChessProject.model.User testUser = new
-        // com.example.ChessProject.model.User("histUser", "h", "h@e.com");
-        // userRepository.saveUser(testUser);
-        // int userId = testUser.getUserID();
-        int userId = 1; // Using a simple ID for the test
+        int userId = 1;
 
         String gameData1 = "e4 e5 Nf3 Nc6";
         String gameData2 = "d4 d5 c4 c6";
@@ -66,8 +58,7 @@ public class GameHistoryRepositoryTest {
         List<String> history = gameHistoryRepository.getHistoryByUser(userId);
         assertNotNull(history);
         assertEquals(2, history.size(), "Should retrieve two game history entries.");
-        // Order is DESC by playedAt (which defaults to CURRENT_TIMESTAMP)
-        // So gameData2 should be first if inserted later.
+        
         assertTrue(history.contains(gameData1));
         assertTrue(history.contains(gameData2));
     }

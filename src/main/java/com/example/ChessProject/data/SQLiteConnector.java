@@ -10,6 +10,10 @@ public class SQLiteConnector {
         currentDbURL=testDbURL;
     }
 
+    public static void resetDatabaseUrlToDefault(){
+        currentDbURL="jdbc:sqlite:data.db";
+    }
+
     public static Connection connect() throws SQLException {
         try {
             Class.forName("org.sqlite.JDBC");

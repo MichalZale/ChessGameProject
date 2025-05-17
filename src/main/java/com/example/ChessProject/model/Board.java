@@ -1,8 +1,13 @@
 package com.example.ChessProject.model;
+import com.example.ChessProject.model.*;
+import com.example.ChessProject.model.pieces.Rook;
 
 public class Board {
     private Piece[][] board = new Piece[8][8];
     
+    public Board(){
+    }
+
     public Piece getPiece(Position pos){
         return board[pos.row][pos.column];
     }
