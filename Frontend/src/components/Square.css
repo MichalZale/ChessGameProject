@@ -1,0 +1,23 @@
+.square{
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+}
+
+.white{
+    background-color: #f0d9b5;
+}
+
+.black{
+    background-color: #b58863;
+}
+
+.piece {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
