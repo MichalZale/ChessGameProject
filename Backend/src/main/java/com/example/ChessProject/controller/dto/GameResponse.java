@@ -1,8 +1,7 @@
 package com.example.ChessProject.controller.dto;
-
-import com.example.ChessProject.model.Board;
 import com.example.ChessProject.model.Move;
 import com.example.ChessProject.model.Timer;
+import com.example.ChessProject.model.Piece;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,7 +14,7 @@ public class GameResponse {
     private String   inviteCode;     
     private String   status;         
     private String   sideToMove;      
-    private Board    board;          
+    private Piece[][] board;          
     private int      whiteUserId;     
     private int      blackUserId;
     private Timer    timer;          

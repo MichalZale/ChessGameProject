@@ -3,17 +3,23 @@ package com.example.ChessProject.service;
 import com.example.ChessProject.data.MoveListSerializer;
 import com.example.ChessProject.model.*;
 import com.example.ChessProject.data.*;
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import org.springframework.stereotype.Service;
 
+
+@Service
 public class GameService {
     private int nextID = 1;
     public Map<Integer, Game> activeGames;
     public Map<String, Integer> gameCodes;
     private final GameHistoryService historyService = new GameHistoryService();
 
-
     public Game createGame(GameSettings settings) {
+        activeGames = new HashMap<Integer, Game>();
+        gameCodes = new HashMap<String, Integer>();
         String code = generateCode();
         int gameID = generateGameID();
         Game game = new Game(code, settings);
