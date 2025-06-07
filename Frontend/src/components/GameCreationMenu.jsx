@@ -5,10 +5,53 @@ export default function GameCreationMenu({ onReturn, onCreate }) {
   const [blackTime, setBlackTime] = useState(300);
   const [whiteInc, setWhiteInc] = useState(5);
   const [blackInc, setBlackInc] = useState(5);
+  const [playerColor, setPlayerColor] = useState("white"); 
+  const [inviteCode, setInviteCode] = useState(null); 
+  const [isLoading, setIsLoading] = useState(false); 
+
+  const handleCreateGame = () => {
+    setIsLoading(true);
+    setInviteCode(null);
+    
+    onCreate({ whiteTime, blackTime, whiteInc, blackInc, playerColor }, (newInviteCode) => {
+      setInviteCode(newInviteCode);
+      setIsLoading(false);
+    }, () => {
+      setIsLoading(false);
+      console.error("Failed to create game or get invite code.");
+    });
+  };
 
   return (
     <div className="game-creation-menu">
-      <h2>Game Creation</h2>
+      <h2>Create New Game</h2>
+
+      <div className="form-row color-selection">
+        <label>Your Color:</label>
+        <div className="radio-group">
+          <label className={playerColor === "white" ? "active" : ""}>
+            <input
+              type="radio"
+              name="playerColor"
+              value="white"
+              checked={playerColor === "white"}
+              onChange={() => setPlayerColor("white")}
+            />
+            White
+          </label>
+          <label className={playerColor === "black" ? "active" : ""}>
+            <input
+              type="radio"
+              name="playerColor"
+              value="black"
+              checked={playerColor === "black"}
+              onChange={() => setPlayerColor("black")}
+            />
+            Black
+          </label>
+        </div>
+      </div>
+
       <div className="form-row">
         <label htmlFor="white-time">White's time (seconds):</label>
         <input
@@ -61,9 +104,21 @@ export default function GameCreationMenu({ onReturn, onCreate }) {
         />
         <span className="slider-value">{blackInc}s</span>
       </div>
+
+      {isLoading && <p className="loading-text">Creating game...</p>}
+      {inviteCode && !isLoading && (
+        <div className="invite-code-section">
+          <p>Game created! Share this code to invite a friend:</p>
+          <strong className="invite-code-display">{inviteCode}</strong>
+          <p className="info-text">(You will be redirected to the game shortly)</p>
+        </div>
+      )}
+
       <div className="button-row">
-        <button onClick={onReturn}>Return</button>
-        <button onClick={() => onCreate({ whiteTime, blackTime, whiteInc, blackInc })}>Create</button>
+        <button onClick={onReturn} disabled={isLoading}>Return</button>
+        <button onClick={handleCreateGame} disabled={isLoading || inviteCode}>
+          {inviteCode ? "Game Created" : "Create Game"}
+        </button>
       </div>
     </div>
   );

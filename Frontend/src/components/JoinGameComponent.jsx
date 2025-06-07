@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './JoinGameForm.css';
+import './JoinGameComponent.css';
 
 export default function JoinGameForm({ onJoin, onCancel }) {
   const [gameCode, setGameCode] = useState('');

@@ -6,12 +6,13 @@
 }
 
 .main-content {
-  flex: 1;
   display: flex;
   align-items: center;     
   justify-content: center;  
   width: 100%;
+  height: calc(100vh - 60px);
   background: #222;
+  overflow: auto;
 }
 
 html, body, #root  {
@@ -23,4 +24,24 @@ html, body, #root  {
 
 *, *::before, *::after {
   box-sizing: inherit;
+}
+
+.game-area {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 25px;
+  padding: 20px;
+  background-color: #333;
+  border-radius: 8px;
+  max-width: 90%;
+  flex-wrap: nowrap;
+}
+
+.timers-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 200px;
 }
