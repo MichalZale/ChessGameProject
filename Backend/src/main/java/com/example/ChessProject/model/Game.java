@@ -140,6 +140,9 @@ public class Game {
         this.status = GameStatus.FINISHED;
     }
 
+    public void setGameStatus(GameStatus status){
+        this.status=status;
+    }
 
     public void setGameID(int gameID) {
         this.gameID = gameID;
@@ -147,6 +150,14 @@ public class Game {
 
     public void setIsDrawOffered(boolean bool){
         this.isDrawOffered=bool;
+    }
+
+    public void setWhiteUserID(int ID){
+        this.whiteUserID=ID;
+    }
+
+    public void setBlackUserID(int ID){
+        this.blackUserID=ID;
     }
 
     public boolean isDrawOffered(){

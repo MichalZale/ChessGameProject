@@ -1,10 +1,15 @@
 package com.example.ChessProject.model;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
 public class GameState {
     private Board board;
     private Color sideToMove;
     private boolean wCastleK, wCastleQ, bCastleK, bCastleQ;
     private Position enPassant;
+
     public GameState(Board b, Color side,
                      boolean wCK, boolean wCQ,
                      boolean bCK, boolean bCQ,
@@ -24,15 +29,7 @@ public class GameState {
     public boolean canBlackCastleQ()      { return bCastleQ; }
     public Position getEnPassant()        { return enPassant; }
 
-    public void setBoard(Board board) { this.board = board; }
-    public void setSideToMove(Color sideToMove) { this.sideToMove = sideToMove; }
-    public void setWCastleK(boolean wCastleK) { this.wCastleK = wCastleK; }
-    public void setWCastleQ(boolean wCastleQ) { this.wCastleQ = wCastleQ; }
-    public void setBCastleK(boolean bCastleK) { this.bCastleK = bCastleK; }
-    public void setBCastleQ(boolean bCastleQ) { this.bCastleQ = bCastleQ; }
-    public void setEnPassant(Position enPassant) { this.enPassant = enPassant; }
-
-    public void switchSideToMove(){
+	public void switchSideToMove(){
         if(sideToMove==Color.WHITE){
             sideToMove=Color.BLACK;
             return;
@@ -40,12 +37,13 @@ public class GameState {
         sideToMove=Color.WHITE;
         return;
     }
-    
+
     public GameState clone() {
-        return new GameState(board.clone(), sideToMove, 
-        wCastleK, wCastleQ, 
-        bCastleK, bCastleQ, 
-        (enPassant==null) ? null : enPassant.clone());
+        return new GameState(
+            board.clone(), sideToMove,
+            wCastleK, wCastleQ,
+            bCastleK, bCastleQ,
+            (enPassant == null) ? null : enPassant.clone()
+        );
     }
-    
 }
