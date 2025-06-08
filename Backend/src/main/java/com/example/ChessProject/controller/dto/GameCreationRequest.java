@@ -8,6 +8,6 @@ public class GameCreationRequest {
     private int blackTime;
     private int whiteTimeIncrease;
     private int blackTimeIncrease;
-    private int whitePlayerID=-1;
-    private int blackPlayerID=-1;
+    private int whitePlayerID;
+    private int blackPlayerID;
 }
