@@ -15,3 +15,15 @@ export function createGame(gameOptions) {
             throw error;
         });
 }
+
+export function joinGame(gameCode, userID) {
+    return axios.post(`${API_URL}/join`, {
+        gameCode,
+        userID
+    })
+    .then(res => res.data)
+    .catch(error => {
+        console.error("Failed to join game:", error);
+        throw error;
+    });
+}
