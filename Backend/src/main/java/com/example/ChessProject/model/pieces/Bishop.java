@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Bishop extends Piece {
     public Bishop(
             @JsonProperty("color") Color c, 
-            @JsonProperty("column") Position p) {
+            @JsonProperty("position") Position p) {
         super(c, p);
     }
 

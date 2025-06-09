@@ -14,7 +14,7 @@ public class Game {
 
     public enum GameResult {
         NONE,
-        CHECKMATE, 
+        CHECKMATE,
         STELMATE,
         RESIGNATION,
         DRAW_AGREEMENT
@@ -29,7 +29,7 @@ public class Game {
     private Timer timer;
     private List<Move> gameHistory;
     private boolean isDrawOffered;
-    private GameResult gameResult=GameResult.NONE;
+    private GameResult gameResult = GameResult.NONE;
 
     public Game(String inviteCode, GameSettings settings) {
         this.inviteCode = inviteCode;
@@ -63,11 +63,11 @@ public class Game {
         return this.inviteCode;
     }
 
-    public GameState getGameState(){
+    public GameState getGameState() {
         return this.game;
     }
 
-    public GameStatus getGameStatus(){
+    public GameStatus getGameStatus() {
         return this.status;
     }
 
@@ -79,60 +79,71 @@ public class Game {
         return this.blackUserID;
     }
 
-    public Timer getTimer(){
+    public Timer getTimer() {
         return this.timer;
     }
 
-    public List<Move> getGameHistory(){
+    public List<Move> getGameHistory() {
         return this.gameHistory;
     }
 
-    public GameResult getGameResult(){
+    public GameResult getGameResult() {
         return this.gameResult;
     }
 
-    public void makeMove(Move mv) {
+    public void makeMove(Move mv, int userID) {
+        Color sideToMove = game.getSideToMove();
+        if ((sideToMove == Color.WHITE && userID != this.whiteUserID) ||
+                (sideToMove == Color.BLACK && userID != this.blackUserID)) {
+            throw new IllegalStateException("It's not your turn!");
+        }
+        System.out.println("makeMove wywołane z: " + mv);
         Piece piece = game.getBoard().getPiece(mv.getFrom());
+        System.out.println("Piece: " + piece);
         MoveValidator validator = MoveValidatorFactory.getValidator(piece, game);
         if (piece == null) {
+            System.out.println("Brak pionka na pozycji " + mv.getFrom());
+            return;
+        }
+        if (!validator.isValidMove(mv)) {
+            System.out.println("Ruch niepoprawny: " + mv);
             return;
         }
 
-        if (!validator.isValidMove(mv))
-            return;
-
         this.game = validator.simulateMove(mv);
-
+        System.out.println("Ruch wykonany, plansza zmieniona!");
         gameHistory.add(mv);
 
-        if (MoveValidatorFactory.getValidator(piece, game).isCheckmate())
-            this.gameResult=GameResult.CHECKMATE;
+        if (MoveValidatorFactory.getValidator(piece, game).isCheckmate()) {
+            this.gameResult = GameResult.CHECKMATE;
             this.status = GameStatus.FINISHED;
-        if  (MoveValidatorFactory.getValidator(piece, game).isStelmate())
-            this.gameResult=GameResult.STELMATE;
+        }
+        if (MoveValidatorFactory.getValidator(piece, game).isStelmate()) {
+            this.gameResult = GameResult.STELMATE;
             this.status = GameStatus.FINISHED;
+        }
     }
 
     public boolean isOver() {
         return status == GameStatus.FINISHED
-            || status == GameStatus.ABANDONED;
+                || status == GameStatus.ABANDONED;
     }
 
     public void proposeDraw() {
-        this.isDrawOffered=true;
+        this.isDrawOffered = true;
     }
 
-    public void acceptDraw(){
-        if(isDrawOffered==false)
+    public void acceptDraw() {
+        if (isDrawOffered == false)
             throw new IllegalArgumentException("Draw was not being offered");
-        this.gameResult=GameResult.DRAW_AGREEMENT;
-        this.status=GameStatus.FINISHED;
+        this.gameResult = GameResult.DRAW_AGREEMENT;
+        this.status = GameStatus.FINISHED;
     }
 
-    public void rejectDraw(){
-        if(isDrawOffered==false)
+    public void rejectDraw() {
+        if (isDrawOffered == false)
             throw new IllegalArgumentException("Draw was not being offered");
-            setIsDrawOffered(false);
+        setIsDrawOffered(false);
     }
 
     public void resign() {
@@ -140,27 +151,27 @@ public class Game {
         this.status = GameStatus.FINISHED;
     }
 
-    public void setGameStatus(GameStatus status){
-        this.status=status;
+    public void setGameStatus(GameStatus status) {
+        this.status = status;
     }
 
     public void setGameID(int gameID) {
         this.gameID = gameID;
     }
 
-    public void setIsDrawOffered(boolean bool){
-        this.isDrawOffered=bool;
+    public void setIsDrawOffered(boolean bool) {
+        this.isDrawOffered = bool;
     }
 
-    public void setWhiteUserID(int ID){
-        this.whiteUserID=ID;
+    public void setWhiteUserID(int ID) {
+        this.whiteUserID = ID;
     }
 
-    public void setBlackUserID(int ID){
-        this.blackUserID=ID;
+    public void setBlackUserID(int ID) {
+        this.blackUserID = ID;
     }
 
-    public boolean isDrawOffered(){
+    public boolean isDrawOffered() {
         return this.isDrawOffered;
     }
 }

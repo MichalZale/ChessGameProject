@@ -17,18 +17,20 @@ public class KingValidator extends MoveValidator {
 
         int dr=Math.abs(to.row-from.row);
         int dc=Math.abs(to.column-from.column);
-        if(dr<=1 && dc<=1) return true;
+        if (move.getMoveType() == Move.MoveType.CASTLE_KINGSIDE || move.getMoveType() == Move.MoveType.CASTLE_QUEENSIDE) {
+            if (dr != 0 || dc != 2) return false; 
 
-        if(dr==0 && dc==2){
             if(!isCastlingLineSafe(from,to,st)) return false;
-            if(from.column<to.column){
+            if(from.column<to.column){ // Kingside
                 if(st.getSideToMove()==Color.WHITE && !st.canWhiteCastleK()) return false;
                 if(st.getSideToMove()==Color.BLACK && !st.canBlackCastleK()) return false;
-            }else{
+            }else{ // Queenside
                 if(st.getSideToMove()==Color.WHITE && !st.canWhiteCastleQ()) return false;
                 if(st.getSideToMove()==Color.BLACK && !st.canBlackCastleQ()) return false;
             }
             if(!pathEmptyForCastle(from,to,b)) return false;
+            return true;
+        } else if (dr <= 1 && dc <= 1) { 
             return true;
         }
         return false;
