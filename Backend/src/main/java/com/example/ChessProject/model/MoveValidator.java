@@ -66,7 +66,7 @@ public abstract class MoveValidator {
         return isInCheck(state, turn) && generateAllLegalMoves().isEmpty();
     }
 
-    protected boolean isStelmate() {
+    protected boolean isStalemate() {
         return !isInCheck(state, turn) && generateAllLegalMoves().isEmpty();
     }
 

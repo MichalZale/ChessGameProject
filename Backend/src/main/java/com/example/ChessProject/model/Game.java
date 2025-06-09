@@ -1,6 +1,9 @@
 package com.example.ChessProject.model;
 
 import java.util.List;
+
+import com.example.ChessProject.model.validators.KingValidator;
+
 import java.util.ArrayList;
 
 public class Game {
@@ -15,7 +18,7 @@ public class Game {
     public enum GameResult {
         NONE,
         CHECKMATE,
-        STELMATE,
+        STALEMATE,
         RESIGNATION,
         DRAW_AGREEMENT
     }
@@ -29,6 +32,7 @@ public class Game {
     private Timer timer;
     private List<Move> gameHistory;
     private boolean isDrawOffered;
+    private int drawOfferedByUserID = -1;
     private GameResult gameResult = GameResult.NONE;
 
     public Game(String inviteCode, GameSettings settings) {
@@ -43,6 +47,7 @@ public class Game {
                 settings.getWhiteTimeIncrease(),
                 settings.getBlackTimeIncrease());
         this.gameHistory = new ArrayList<>();
+        this.isDrawOffered = false;
     }
 
     public void joinGame(int userID) {
@@ -92,63 +97,129 @@ public class Game {
     }
 
     public void makeMove(Move mv, int userID) {
-        Color sideToMove = game.getSideToMove();
-        if ((sideToMove == Color.WHITE && userID != this.whiteUserID) ||
-                (sideToMove == Color.BLACK && userID != this.blackUserID)) {
+        if (isOver()) {             throw new IllegalStateException("Game is over.");
+        }
+
+        Color sideThatMoved = game.getSideToMove();         if ((sideThatMoved == Color.WHITE && userID != this.whiteUserID) ||
+                (sideThatMoved == Color.BLACK && userID != this.blackUserID)) {
             throw new IllegalStateException("It's not your turn!");
         }
-        System.out.println("makeMove wywołane z: " + mv);
-        Piece piece = game.getBoard().getPiece(mv.getFrom());
+
+                if (this.timer != null) {
+            this.timer.applyIncrement(sideThatMoved);
+        }
+
+                if (this.isDrawOffered && this.drawOfferedByUserID != userID) {
+            this.isDrawOffered = false;
+            this.drawOfferedByUserID = -1;
+        }
+
+        System.out.println("makeMove wywołane z: " + mv + " przez gracza " + userID);         Piece piece = game.getBoard().getPiece(mv.getFrom());
         System.out.println("Piece: " + piece);
-        MoveValidator validator = MoveValidatorFactory.getValidator(piece, game);
+
         if (piece == null) {
             System.out.println("Brak pionka na pozycji " + mv.getFrom());
-            return;
+                        throw new IllegalArgumentException("No piece at starting position: " + mv.getFrom());
         }
+
+        MoveValidator validator = MoveValidatorFactory.getValidator(piece, game);
+
         if (!validator.isValidMove(mv)) {
             System.out.println("Ruch niepoprawny: " + mv);
-            return;
+                        throw new IllegalArgumentException("Invalid move: " + mv);
         }
 
-        this.game = validator.simulateMove(mv);
-        System.out.println("Ruch wykonany, plansza zmieniona!");
+                        GameState newGameState = validator.simulateMove(mv);
+        this.game = newGameState; 
+        System.out.println("Ruch wykonany, plansza zmieniona! Nowa tura: " + this.game.getSideToMove());
         gameHistory.add(mv);
 
-        if (MoveValidatorFactory.getValidator(piece, game).isCheckmate()) {
-            this.gameResult = GameResult.CHECKMATE;
+                                                                                        
+                                                        
+        MoveValidator postMoveValidatorForWhite = MoveValidatorFactory.getValidator(null, this.game);                                                                                                                                                                                                                     MoveValidator stateChecker = new KingValidator(this.game);
+
+                if (stateChecker.isCheckmate()) {             this.gameResult = GameResult.CHECKMATE;
             this.status = GameStatus.FINISHED;
-        }
-        if (MoveValidatorFactory.getValidator(piece, game).isStelmate()) {
-            this.gameResult = GameResult.STELMATE;
+                                                        } else if (stateChecker.isStalemate()) {             this.gameResult = GameResult.STALEMATE;
             this.status = GameStatus.FINISHED;
         }
     }
 
     public boolean isOver() {
-        return status == GameStatus.FINISHED
-                || status == GameStatus.ABANDONED;
+                return status == GameStatus.FINISHED
+                || status == GameStatus.ABANDONED
+                || gameResult != GameResult.NONE;
     }
 
-    public void proposeDraw() {
+    public void proposeDraw(int userID) {
+        if (isOver())
+            throw new IllegalStateException("Game is over.");
+                if (userID != this.whiteUserID && userID != this.blackUserID) {
+            throw new IllegalStateException(
+                    "User " + userID + " is not a player in this game and cannot offer a draw.");
+        }
+                if (this.isDrawOffered && this.drawOfferedByUserID == userID) {
+                        System.out.println("User " + userID + " already offered a draw.");
+            return;
+        }
+                if (this.isDrawOffered && this.drawOfferedByUserID != userID) {
+            throw new IllegalStateException(
+                    "Another player has already offered a draw. Respond to the existing offer.");
+        }
+
         this.isDrawOffered = true;
+        this.drawOfferedByUserID = userID;         System.out.println("Game " + this.gameID + ": User " + userID + " offered a draw. isDrawOffered="
+                + this.isDrawOffered + ", offeredBy=" + this.drawOfferedByUserID);
     }
 
-    public void acceptDraw() {
-        if (isDrawOffered == false)
-            throw new IllegalArgumentException("Draw was not being offered");
+    public void acceptDraw(int userID) {
+        if (isOver())
+            throw new IllegalStateException("Game is over.");
+        if (!isDrawOffered) {
+            throw new IllegalStateException("Draw was not offered.");
+        }
+        if (this.drawOfferedByUserID == userID) {
+            throw new IllegalStateException("Cannot accept your own draw offer.");
+        }
+                if (userID != this.whiteUserID && userID != this.blackUserID) {
+            throw new IllegalStateException(
+                    "User " + userID + " is not a player in this game and cannot accept a draw.");
+        }
+        if (this.drawOfferedByUserID == -1 || (userID != this.whiteUserID && userID != this.blackUserID)
+                || this.drawOfferedByUserID == userID) {
+            throw new IllegalStateException("Invalid conditions to accept a draw.");
+        }
+
         this.gameResult = GameResult.DRAW_AGREEMENT;
         this.status = GameStatus.FINISHED;
+        this.isDrawOffered = false;         this.drawOfferedByUserID = -1;         System.out.println("Game " + this.gameID + ": User " + userID + " accepted the draw offer from user "
+                + this.drawOfferedByUserID + " (before reset).");
     }
 
-    public void rejectDraw() {
-        if (isDrawOffered == false)
-            throw new IllegalArgumentException("Draw was not being offered");
-        setIsDrawOffered(false);
+    public void rejectDraw(int userID) {
+        if (isOver())
+            throw new IllegalStateException("Game is over.");
+        if (!isDrawOffered) {
+            throw new IllegalStateException("Draw was not offered.");
+        }
+                if (userID != this.whiteUserID && userID != this.blackUserID) {
+            throw new IllegalStateException(
+                    "User " + userID + " is not a player in this game and cannot reject a draw.");
+        }
+        if (this.drawOfferedByUserID == -1 || (userID != this.whiteUserID && userID != this.blackUserID)
+                || this.drawOfferedByUserID == userID) {
+            throw new IllegalStateException("Invalid conditions to reject a draw.");
+        }
+
+        this.isDrawOffered = false;         this.drawOfferedByUserID = -1;         System.out.println("Game " + this.gameID + ": User " + userID + " rejected the draw offer.");
     }
 
-    public void resign() {
+    public void resign(int resigningUserID) {
+        if (isOver())
+            throw new IllegalStateException("Game is over.");
         this.gameResult = GameResult.RESIGNATION;
         this.status = GameStatus.FINISHED;
+
     }
 
     public void setGameStatus(GameStatus status) {
@@ -163,15 +234,23 @@ public class Game {
         this.isDrawOffered = bool;
     }
 
+    public int getDrawOfferedByUserID() {
+        return drawOfferedByUserID;
+    }
+
+    public void setDrawOfferedByUserID(int drawOfferedByUserID) {
+        this.drawOfferedByUserID = drawOfferedByUserID;
+    }
+
+    public boolean isDrawOffered() {
+        return this.isDrawOffered;
+    }
+
     public void setWhiteUserID(int ID) {
         this.whiteUserID = ID;
     }
 
     public void setBlackUserID(int ID) {
         this.blackUserID = ID;
-    }
-
-    public boolean isDrawOffered() {
-        return this.isDrawOffered;
     }
 }

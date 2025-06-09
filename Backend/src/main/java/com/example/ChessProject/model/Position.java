@@ -29,7 +29,6 @@ public class Position {
         return row == position.row && column == position.column;
     }
 
-    // It's good practice to override hashCode when you override equals
     @Override
     public int hashCode() {
         return Objects.hash(row, column);
