@@ -1,5 +1,6 @@
 .join-game-form {
-  background: #e3f0ff;
+  background: #f5f6fa;
+  color: #222;
   padding: 32px 40px;
   border-radius: 16px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
@@ -31,16 +32,17 @@
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #234;
+  color: #222; /* Dark label */
 }
 
 .input-group input {
   width: 100%;
   padding: 12px;
   font-size: 1.1rem;
+  background-color: #f9fafb; /* Light background */
+  color: #222;               /* Dark text */
   border: 2px solid #b8c2cc;
   border-radius: 6px;
-  background-color: white;
   transition: border-color 0.2s;
 }
 
@@ -51,7 +53,8 @@
 }
 
 .error-message {
-  color: #e74c3c;
+  color: #d32f2f;
+  font-weight: bold;
   margin-bottom: 16px;
 }
 

@@ -1,18 +1,30 @@
 import { useState } from "react";
+import { login } from "../API/userAPI";
 import "./AuthForm.css";
 
 export default function LoginForm({ onSuccess, onCancel }) {
-  const [login, setLogin]       = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [err, setErr]           = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    // TODO 
-    if (login && password) {
-      onSuccess({ login });
-    } else {
-      setErr("Both fields are required.");
+    if (!username || !password) {
+      setError("Both fields are required.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const user = await login(username, password);
+      onSuccess(user);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -22,10 +34,11 @@ export default function LoginForm({ onSuccess, onCancel }) {
 
       <input
         type="text"
-        placeholder="Login"
-        value={login}
-        onChange={e => setLogin(e.target.value)}
+        placeholder="Username"
+        value={username}
+        onChange={e => setUsername(e.target.value)}
         required
+        disabled={isLoading}
       />
 
       <input
@@ -34,13 +47,18 @@ export default function LoginForm({ onSuccess, onCancel }) {
         value={password}
         onChange={e => setPassword(e.target.value)}
         required
+        disabled={isLoading}
       />
 
-      {err && <div className="auth-error">{err}</div>}
+      {error && <div className="auth-error">{error}</div>}
 
       <div className="auth-buttons">
-        <button type="submit">Log in</button>
-        <button type="button" onClick={onCancel}>Back</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? "Logging in..." : "Log in"}
+        </button>
+        <button type="button" onClick={onCancel} disabled={isLoading}>
+          Back
+        </button>
       </div>
     </form>
   );

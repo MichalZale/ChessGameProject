@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import Navbar from "./components/Navbar";
 import StartingMenu from "./components/StartingMenu";
 import LoginForm from "./components/LoginForm";
@@ -12,33 +13,192 @@ import Timer from "./components/Timer";
 import "./components/Timer.css";
 import JoinGameForm from "./components/JoinGameComponent";
 import "./components/JoinGameComponent.css";
-import "./App.css"
+import "./App.css";
+import { useChessWebSocket } from "./API/ChessWebSocket";
+import GameActionsPanel from "./components/GameActionsPanel";
+import "./components/GameActionsPanel.css";
+import { joinGame } from "./API/gameAPI"
+import { createGuestUser, login, register } from "./API/userAPI";
+
+const WS_MSG_TYPES = {
+  MOVE: "MOVE",
+  RESIGN: "RESIGN",
+  DRAW_PROPOSE: "DRAW_PROPOSE",
+  DRAW_ACCEPT: "DRAW_ACCEPT",
+  DRAW_REJECT: "DRAW_REJECT",
+};
 
 function App() {
-  const [screen, setScreen] = useState("menu");
   const [user, setUser] = useState(null);
+  const [screen, setScreen] = useState("menu");
   const [gameData, setGameData] = useState(null);
+  
+  useEffect(() => {
+    if (gameData) {
+      console.log("<<<<< App.jsx - gameData updated >>>>>");
+      console.log("Current gameData.isDrawOffered:", gameData.isDrawOffered);
+      console.log("Current gameData.drawOfferedByUserID:", gameData.drawOfferedByUserID);
+      console.log("Current gameData.whiteUserId:", gameData.whiteUserId);
+      console.log("Current gameData.blackUserId:", gameData.blackUserId);
+      console.log("Current gameData.status:", gameData.status);
+      console.log("Current gameData.gameResult:", gameData.gameResult);
+      console.log("Full gameData:", JSON.parse(JSON.stringify(gameData))); 
+    }
+  }, [gameData]); 
+  useEffect(() => {
+    if (!user) {
+      createGuestUser()
+        .then(res => setUser(res))
+        .catch(() => alert("Could not create guest user!"));
+    }
+  }, [user]);
+
+  
+
+  function getUserId(user) {
+    return user?.userID ?? user?.id;
+  }
+
+  const sendGameMessage = useChessWebSocket(
+    gameData ? gameData.gameId : null,
+    handleGameMessage   );
+
+  function handleGameMessage(newGameData) {
+    console.log("<<<<< WebSocket Received (handleGameMessage) >>>>>");
+    console.log("Raw newGameData:", JSON.parse(JSON.stringify(newGameData))); 
+    if (newGameData.error) {
+      console.error("Error in game update:", newGameData.error);
+      return;
+    }
+
+    const mappedBoard = newGameData.gameState?.board?.board 
+        ? mapBackendBoardToFrontend(newGameData.gameState.board.board) 
+        : gameData?.board; 
+
+    setGameData(prevGameData => {
+      console.log("<<<<< Inside setGameData (handleGameMessage) >>>>>");
+      console.log("prevGameData.isDrawOffered:", prevGameData?.isDrawOffered);
+      console.log("prevGameData.drawOfferedByUserID:", prevGameData?.drawOfferedByUserID);
+      console.log("newGameData.isDrawOffered (from WebSocket):", newGameData.isDrawOffered);
+      console.log("newGameData.drawOfferedByUserID (from WebSocket):", newGameData.drawOfferedByUserID);
+
+      let determinedPlayerColor = prevGameData?.playerColor;
+      if (!determinedPlayerColor && typeof newGameData.whiteUserId !== 'undefined' && typeof newGameData.blackUserId !== 'undefined' && user) {
+        const currentUserId = getUserId(user);
+        if (newGameData.whiteUserId === currentUserId) {
+          determinedPlayerColor = "white";
+        } else if (newGameData.blackUserId === currentUserId) {
+          determinedPlayerColor = "black";
+        }
+      }
+
+      const nextGameData = {
+        ...prevGameData, 
+        ...newGameData,
+        board: mappedBoard || prevGameData?.board, 
+        playerColor: determinedPlayerColor, 
+        gameState: newGameData.gameState || prevGameData?.gameState,
+        whiteTime: typeof newGameData.timer?.whiteTime === 'number' ? newGameData.timer.whiteTime : prevGameData?.timer?.whiteTime,
+        blackTime: typeof newGameData.timer?.blackTime === 'number' ? newGameData.timer.blackTime : prevGameData?.timer?.blackTime,
+      };
+      console.log("nextGameData to be set:", JSON.parse(JSON.stringify(nextGameData)));
+      console.log("<<<<< Exiting setGameData (handleGameMessage) >>>>>");
+      return nextGameData;
+    });
+  }
+
+  const handleOfferDraw = () => {
+    if (!gameData || !user) return;
+    console.log("Offering draw...");
+    sendGameMessage({
+      gameId: gameData.gameId,       userId: getUserId(user),       type: WS_MSG_TYPES.DRAW_PROPOSE, 
+      payload: {} 
+    });
+  };
+
+  const handleResign = () => {
+    if (!gameData || !user) return;
+    console.log("Resigning game...");
+    sendGameMessage({
+      gameId: gameData.gameId, 
+      userId: getUserId(user), 
+      type: WS_MSG_TYPES.RESIGN,
+      payload: {}
+    });
+  };
+
+  const handleAcceptDraw = () => {
+    if (!gameData || !user || !gameData.isDrawOffered) return;
+    console.log("Accepting draw...");
+    sendGameMessage({
+      gameId: gameData.gameId,
+      userId: getUserId(user),
+      type: WS_MSG_TYPES.DRAW_ACCEPT,
+      payload: {}
+    });
+  };
+
+  const handleRejectDraw = () => {
+    if (!gameData || !user || !gameData.isDrawOffered) return;
+    console.log("Rejecting draw...");
+    sendGameMessage({
+      gameId: gameData.gameId,
+      userId: getUserId(user),
+      type: WS_MSG_TYPES.DRAW_REJECT,
+      payload: {}
+    });
+  };
+
+  function isGuestUser(user) {
+    return user?.username?.startsWith("Guest") || user?.isGuest === true;
+  }
 
   return (
     <div className="app">
       <Navbar
         isLoggedIn={Boolean(user)}
+        isGuest={Boolean(user) && isGuestUser(user)}
         onProfileClick={() => alert("profile!")}
         onLoginClick={() => setScreen("login")}
         onRegisterClick={() => setScreen("register")}
+        onLogout={() => {
+          setUser(null);
+          setScreen("menu");
+          createGuestUser().then(setUser);
+        }}
       />
+
+      {user && !isGuestUser(user) && (
+        <div style={{
+          background: "#e3e8f0",
+          color: "#234",
+          padding: "8px 16px",
+          fontWeight: 600,
+          fontSize: "1.05em",
+          borderBottom: "1px solid #b8c2cc"
+        }}>
+          Logged in as: <span style={{ color: "#3578c0" }}>{user.username}</span>
+          {" "} (ID: <span style={{ color: "#3578c0" }}>{user.userID ?? user.id}</span>)
+        </div>
+      )}
 
       <main className="main-content">
         {screen === "login" && (
           <LoginForm
-            onSuccess={u => { setUser(u); setScreen("menu"); }}
+            onSuccess={(userData) => { 
+              setUser(userData);
+              setScreen("menu");
+            }}
             onCancel={() => setScreen("menu")}
           />
         )}
 
         {screen === "register" && (
           <RegisterForm
-            onSuccess={u => { setUser(u); setScreen("menu"); }}
+            onSuccess={(userData) => {
+              setUser(userData);
+              setScreen("menu");
+            }}
             onCancel={() => setScreen("menu")}
           />
         )}
@@ -54,9 +214,8 @@ function App() {
           <GameCreationMenu
             onReturn={() => setScreen("menu")}
             onCreate={({ whiteTime, blackTime, whiteInc, blackInc, playerColor }, onCodeReceived, onError) => {
-              const playerOneID = user ? user.id : 1; // Przykładowe ID, dostosuj do swojej logiki użytkownika
-              const playerTwoID = user ? (playerOneID === 1 ? 2 : 1) : 2; // Przykładowe ID dla drugiego gracza
-
+              const playerOneID = getUserId(user) ?? -1;
+              const playerTwoID = -1;
               createGame({
                 whiteTime: whiteTime,
                 blackTime: blackTime,
@@ -66,68 +225,124 @@ function App() {
                 blackPlayerID: playerColor === "black" ? playerOneID : playerTwoID,
               }).then(data => {
                 if (data && data.gameId && data.inviteCode) {
-                  console.log("Game created successfully:", data);
-                  const mappedBoard = mapBackendBoardToFrontend(data.board);
+                  const mappedBoard = mapBackendBoardToFrontend(data.gameState.board.board);
                   setGameData({
-                     ...data, 
-                     board: mappedBoard,
-                     playerColor: playerColor 
-                    });
+                    ...data,
+                    board: mappedBoard,
+                    playerColor: playerColor,
+                    sideToMove: data.gameState.sideToMove,
+                    gameState: data.gameState,
+                    whiteTime: data.timer.whiteTime,
+                    blackTime: data.timer.blackTime
+                  });
 
                   if (onCodeReceived) {
-                    onCodeReceived(data.inviteCode); // Przekaż kod zaproszenia z powrotem do GameCreationMenu
+                    onCodeReceived(data.inviteCode);
                   }
-                  
                   setTimeout(() => {
                     setScreen("game");
                   }, 3000);
-
                 } else {
-                  console.error("Failed to create game or missing data:", data);
                   if (onError) onError();
                 }
               })
             }}
-
           />
         )}
 
         {screen === "join-game" && (
           <JoinGameForm
-            onJoin={(gameCode) => {
-              // Here you would typically make an API call to join the game
-              console.log("Joining game with code:", gameCode);
-              // For now, just switch to game screen
-              alert(`Would join game with code: ${gameCode}`);
-              // Later replace with actual API call and game data setting
-              // setGameData(joinGameResponse); 
-              // setScreen("game");
+            onJoin={async (gameCode) => {
+              if (!user) {
+                alert("You must be logged in to join a game.");
+                return;
+              }
+              try {
+                const currentUserId = getUserId(user);                 const data = await joinGame(gameCode, currentUserId);
+                if (data && data.gameId) {
+                  const mappedBoard = mapBackendBoardToFrontend(data.gameState.board.board);
+                  let determinedPlayerColorOnJoin;
+                  if (data.whiteUserId === currentUserId) {
+                    determinedPlayerColorOnJoin = "white";
+                  } else if (data.blackUserId === currentUserId) {
+                    determinedPlayerColorOnJoin = "black";
+                  } else {
+                    determinedPlayerColorOnJoin = undefined; 
+                    console.warn("User joined but is not assigned as white or black player.");
+                  }
+
+                  setGameData({
+                    ...data,
+                    board: mappedBoard,
+                    playerColor: determinedPlayerColorOnJoin, 
+                    sideToMove: data.gameState.sideToMove,
+                    gameState: data.gameState,
+                    whiteTime: data.timer.whiteTime,
+                    blackTime: data.timer.blackTime
+                  });
+                  setScreen("game");
+                } else {
+                  alert("Could not join game. Invalid code or game is full.");
+                }
+              } catch (err) {
+                alert("Could not join game. Invalid code or game is full.");
+              }
             }}
             onCancel={() => setScreen("menu")}
           />
         )}
 
-
         {screen === "game" && gameData && (
           <div className="game-area">
-            <Chessboard backendBoard={gameData.board} playerColor={gameData.playerColor}/>
+            <Chessboard
+              backendBoard={gameData.board}
+              playerColor={gameData.playerColor}
+              sendGameMessage={sendGameMessage}
+              user={user}
+              gameId={gameData.gameId}
+            />
             <div className="timers-panel">
-              <Timer
-                label="Black"
-                timeInSeconds={gameData.timer ? gameData.timer.blackTime : 0}
-                isActive={gameData.sideToMove === 'BLACK'}
-              />
-              <Timer
-                label="White"
-                timeInSeconds={gameData.timer ? gameData.timer.whiteTime : 0}
-                isActive={gameData.sideToMove === 'WHITE'}
+              {gameData.playerColor === 'white' ? (
+                <>
+                  <Timer
+                    label="Black" 
+                    timeInSeconds={gameData.blackTime ?? (gameData.timer ? gameData.timer.blackTime : 0)}
+                    isActive={gameData.gameState?.sideToMove === 'BLACK'}
+                  />
+                  <Timer
+                    label="White" 
+                    timeInSeconds={gameData.whiteTime ?? (gameData.timer ? gameData.timer.whiteTime : 0)}
+                    isActive={gameData.gameState?.sideToMove === 'WHITE'}
+                  />
+                </>
+              ) : ( 
+                <>
+                  <Timer
+                    label="White" 
+                    timeInSeconds={gameData.whiteTime ?? (gameData.timer ? gameData.timer.whiteTime : 0)}
+                    isActive={gameData.gameState?.sideToMove === 'WHITE'}
+                  />
+                  <Timer
+                    label="Black" 
+                    timeInSeconds={gameData.blackTime ?? (gameData.timer ? gameData.timer.blackTime : 0)}
+                    isActive={gameData.gameState?.sideToMove === 'BLACK'}
+                  />
+                </>
+              )}
+              <GameActionsPanel
+                gameData={gameData}
+                currentUser={user}   
+                onOfferDraw={handleOfferDraw}
+                onResign={handleResign}
+                onAcceptDraw={handleAcceptDraw}
+                onRejectDraw={handleRejectDraw}
               />
             </div>
           </div>
         )}
       </main>
-    </div> 
-  ); 
+    </div>
+  );
 }
 
 export default App;
