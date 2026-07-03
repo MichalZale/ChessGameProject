@@ -131,7 +131,7 @@ export default function Chessboard({ backendBoard, playerColor, sendGameMessage,
         ? [...Array(8).keys()]
         : [...Array(8).keys()].reverse();
 
-    const colIterationOrder = effectivePlayerColor === "black"
+    const colIterationOrder = effectivePlayerColor === "white"
         ? [...Array(8).keys()]
         : [...Array(8).keys()].reverse();
 

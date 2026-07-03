@@ -15,6 +15,10 @@
   gap: 200px;
 }
 
+.starting-menu h1 {
+  color: #fff;
+}
+
 .button-row {
   padding: 10px 20px;
   font-size: 1rem;

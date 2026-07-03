@@ -20,6 +20,10 @@ public abstract class MoveValidator {
             return false;
 
         Piece moving = board.getPiece(mv.getFrom());
+        Piece target = board.getPiece(mv.getTo());
+        if (target instanceof King)
+            return false;
+
         boolean castling = moving instanceof King &&
                 Math.abs(mv.getFrom().column - mv.getTo().column) == 2;
 

@@ -22,11 +22,11 @@ public class UserController {
     }
 
     @PostMapping("/guest")
-    public User createGuestUser() {
+    public UserResponse createGuestUser() {
         int id = guestCounter.getAndIncrement();
         User guest = new User("Guest" + id, "", "");
         guest.setUserID(id);
-        return guest;
+        return UserResponse.fromUser(guest);
     }
 
     @PostMapping("/login")
