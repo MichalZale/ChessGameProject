@@ -6,15 +6,15 @@ export function useChessWebSocket(gameId, onMessage) {
 
   useEffect(() => {
     if (!gameId) return;
+    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws';
     const client = new Client({
-      brokerURL: 'ws://localhost:8080/ws',
+      brokerURL: wsUrl,
       reconnectDelay: 2000,
-      debug: str => console.log(str)
+      debug: () => {}
     });
 
     client.onConnect = () => {
       client.subscribe(`/topic/game-${gameId}`, message => {
-        console.log("ODEBRANA wiadomość z WS:", message.body);
         const body = JSON.parse(message.body);
         onMessage && onMessage(body);
       });
@@ -28,15 +28,17 @@ export function useChessWebSocket(gameId, onMessage) {
     };
   }, [gameId, onMessage]);
 
-  function sendGameMessage(wsMessage) {
+    function sendGameMessage(wsMessage) {
     if (clientRef.current && clientRef.current.connected) {
       clientRef.current.publish({
         destination: '/app/game/message',
         body: JSON.stringify(wsMessage)
       });
+      return true;
     }
+    console.error("WebSocket is not connected. Message was not sent:", wsMessage);
+    return false;
   }
 
   return sendGameMessage;
 }
-

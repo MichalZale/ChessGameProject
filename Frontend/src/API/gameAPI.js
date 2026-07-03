@@ -1,18 +1,13 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/game";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+const API_URL = `${API_BASE_URL}/api/game`;
 
 export function createGame(gameOptions) {
     return axios.post(API_URL, gameOptions)
         .then(res => res.data)
-        .then(game => {
-            console.log("Created game: ", game);
-            return game;
-            
-        })
         .catch(error => {
-            console.error("Failed to create game:", error);
-            throw error;
+            throw new Error(error.response?.data?.message || "Failed to create game.");
         });
 }
 
@@ -23,7 +18,6 @@ export function joinGame(gameCode, userID) {
     })
     .then(res => res.data)
     .catch(error => {
-        console.error("Failed to join game:", error);
-        throw error;
+        throw new Error(error.response?.data?.message || "Failed to join game.");
     });
 }
