@@ -2,10 +2,12 @@ package com.example.ChessProject.controller;
 
 import com.example.ChessProject.controller.dto.GameCreationRequest;
 import com.example.ChessProject.controller.dto.GameResponse;
+import com.example.ChessProject.controller.dto.JoinGameRequest;
 import com.example.ChessProject.model.Game;
 import com.example.ChessProject.model.GameSettings;
 import com.example.ChessProject.service.GameService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,19 +23,18 @@ public class GameController {
 
     @PostMapping(consumes = "application/json", produces = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
-    public GameResponse createGame(@RequestBody GameCreationRequest req) {
+    public ResponseEntity<GameResponse> createGame(@RequestBody GameCreationRequest req) {
         GameSettings settings = new GameSettings(
-            req.getWhitePlayerID(),
-            req.getBlackPlayerID(),
-            req.getWhiteTime(),
-            req.getBlackTime(),
-            req.getWhiteTimeIncrease(),
-            req.getBlackTimeIncrease()
-        );
+                req.getWhiteTime(),
+                req.getBlackTime(),
+                req.getWhiteTimeIncrease(),
+                req.getBlackTimeIncrease(),
+                req.getWhitePlayerID(),
+                req.getBlackPlayerID());
 
         Game game = gameService.createGame(settings);
 
-        return toGameResponse(game);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toGameResponse(game));
     }
 
     private GameResponse toGameResponse(Game game) {
@@ -41,14 +42,24 @@ public class GameController {
                 .gameId(game.getGameID())
                 .inviteCode(game.getInviteCode())
                 .status(game.getGameStatus().name())
-                .sideToMove(game.getGameState().getSideToMove().name())
-                .board(game.getGameState().getBoard().asArray())
+                .gameState(game.getGameState())
                 .whiteUserId(game.getWhiteUserID())
                 .blackUserId(game.getBlackUserID())
                 .timer(game.getTimer())
                 .isDrawOffered(game.isDrawOffered())
+                .drawOfferedByUserID(game.getDrawOfferedByUserID())
                 .gameHistory(game.getGameHistory())
                 .gameResult(game.getGameResult().name())
                 .build();
+    }
+
+    @PostMapping("/join")
+    public ResponseEntity<GameResponse> joinGame(@RequestBody JoinGameRequest request) {
+        try {
+            Game game = gameService.joinGameByCode(request.getGameCode(), request.getUserID());
+            return ResponseEntity.ok(toGameResponse(game));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 }

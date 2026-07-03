@@ -5,7 +5,10 @@ import java.sql.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.Optional;
 import com.example.ChessProject.data.*;
+import org.springframework.stereotype.Service;
 
+
+@Service
 public class UserService {
     private UserRepository userRepository = new UserRepository();
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
@@ -24,14 +27,17 @@ public class UserService {
         return null;
     }
 
-    public void registerUser(String username, String password, String email) {
+    public User registerUser(String username, String password, String email) {
         try {
             if(userRepository.findByUsername(username).isPresent()){
                 throw new Exception("User already exists"); 
             }
             String passwordHash = encoder.encode(password);
             User user = new User(username, passwordHash, email);
+            System.out.println("Zapisuję użytkownika");
             userRepository.saveUser(user);
+            System.out.println("Zapisano użytkownika");
+            return user;
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

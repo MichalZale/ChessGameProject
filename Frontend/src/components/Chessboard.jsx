@@ -21,7 +21,7 @@ const pieceImages = {
 
 const initialBoard = Array(8).fill(null).map(() => Array(8).fill(null));
 
-export default function Chessboard({ backendBoard, playerColor }) {
+export default function Chessboard({ backendBoard, playerColor, sendGameMessage, user, gameId }) {
     const [board, setBoard] = useState(backendBoard || initialBoard);
     const [draggedPiece, setDraggedPiece] = useState(null);
 
@@ -41,21 +41,97 @@ export default function Chessboard({ backendBoard, playerColor }) {
             setDraggedPiece(null);
             return;
         }
-        const newBoard = board.map(row => row.slice());
-        newBoard[toRow][toCol] = board[draggedPiece.fromRow][draggedPiece.fromCol];
-        newBoard[draggedPiece.fromRow][draggedPiece.fromCol] = null;
-        setBoard(newBoard);
+
+        const fromRow = draggedPiece.fromRow;
+        const fromCol = draggedPiece.fromCol;
+
+        const pieceName = board[fromRow]?.[fromCol];
+        let moveType = "NORMAL";
+        let promotionToPiece = null;
+
+        if (pieceName) {
+            const pieceType = pieceName.split('_')[0];             const pieceColor = pieceName.split('_')[1]; 
+                        if (pieceType === "king") {
+                if (Math.abs(toCol - fromCol) === 2 && toRow === fromRow) {
+                    moveType = (toCol > fromCol) ? "CASTLE_KINGSIDE" : "CASTLE_QUEENSIDE";
+                }
+            }
+                        else if (pieceType === "pawn") {
+                const whitePromotionRank = 0;                 const blackPromotionRank = 7; 
+                                if (Math.abs(toRow - fromRow) === 2 && fromCol === toCol) {
+                    moveType = "PAWN_DOUBLE_PUSH";
+                }
+                                                                                                                                                                                                                                                                                                                                                                                                                                
+
+                                if ((pieceColor === 'w' && toRow === whitePromotionRank) ||
+                    (pieceColor === 'b' && toRow === blackPromotionRank)) {
+                    moveType = "PROMOTION";
+                                                                                const chosenPromotion = prompt("Promote to (Q, R, B, K)?", "Q")?.toUpperCase();
+                    if (chosenPromotion && ["Q", "R", "B", "N"].includes(chosenPromotion)) {
+                                                                                                                                                     promotionToPiece = chosenPromotion === "K" ? "KNIGHT" :                                            chosenPromotion === "Q" ? "QUEEN" :
+                                           chosenPromotion === "R" ? "ROOK" :
+                                           chosenPromotion === "B" ? "BISHOP" : null;
+                        if (!promotionToPiece) {
+                            alert("Invalid promotion choice!");
+                            setDraggedPiece(null);
+                            return; 
+                        }
+                    } else {
+                        alert("Promotion cancelled or invalid choice.");
+                        setDraggedPiece(null);
+                        return; 
+                    }
+                }
+            }
+        }
+
+        const move = {
+            from: { row: fromRow, column: fromCol },
+            to: { row: toRow, column: toCol },
+            promotionTo: promotionToPiece, 
+            moveType: moveType
+        };
+
+        console.log("SENT over WS (Chessboard.jsx):", {
+            gameId: gameId, 
+            userId: user?.userID ?? user?.id, 
+            type: "MOVE",
+            payload: move
+        });
+
+        
+        if (!(user?.userID ?? user?.id)) {
+            console.error("UserID is undefined. Move not sent.");
+            alert("Error: User ID is missing. Cannot make a move.");
+            setDraggedPiece(null);
+            return;
+        }
+        if (!gameId) {
+            console.error("GameID is undefined. Move not sent.");
+            alert("Error: Game ID is missing. Cannot make a move.");
+            setDraggedPiece(null);
+            return;
+        }
+
+        sendGameMessage({
+            gameId: gameId,
+            userId: user?.userID ?? user?.id,
+            type: "MOVE",
+            payload: move
+        });
+
         setDraggedPiece(null);
     }
+
 
     const squares = [];
     const effectivePlayerColor = playerColor || "white";
 
-    const rowIterationOrder = effectivePlayerColor === "black"
+    const rowIterationOrder = effectivePlayerColor === "white"
         ? [...Array(8).keys()]
         : [...Array(8).keys()].reverse();
 
-    const colIterationOrder = effectivePlayerColor === "white"
+    const colIterationOrder = effectivePlayerColor === "black"
         ? [...Array(8).keys()]
         : [...Array(8).keys()].reverse();
 

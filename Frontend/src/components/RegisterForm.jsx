@@ -1,28 +1,44 @@
-// components/RegisterForm.jsx
 import { useState } from "react";
+import { register } from "../API/userAPI";
 import "./AuthForm.css";
 
 export default function RegisterForm({ onSuccess, onCancel }) {
-  const [step, setStep]             = useState(1);
-  const [username, setUsername]     = useState("");
-  const [password, setPassword]     = useState("");
-  const [email, setEmail]           = useState("");
-  const [err, setErr]               = useState(null);
+  const [step, setStep] = useState(1);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  function next()  { setStep(step + 1); setErr(null); }
-  function back()  { setStep(step - 1); setErr(null); }
+  function next() { setStep(step + 1); setError(null); }
+  function back() { setStep(step - 1); setError(null); }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (step < 3) {
       next();
       return;
     }
-    // TODO
-    if (username && password && email) {
-      onSuccess({ username });
-    } else {
-      setErr("All fields are required.");
+
+    if (!username || !password || !email) {
+      setError("All fields are required.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    console.log('Form submitted with values:', { username, password: '***', email });
+    
+    try {
+      const user = await register(username, password, email);
+      console.log('Registration successful, user data:', user);
+      onSuccess(user);
+    } catch (err) {
+      console.error('Registration error in form:', err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -38,10 +54,11 @@ export default function RegisterForm({ onSuccess, onCancel }) {
             value={username}
             onChange={e => setUsername(e.target.value)}
             required
+            disabled={isLoading}
           />
           <div className="auth-buttons">
-            <button type="submit">Next</button>
-            <button type="button" onClick={onCancel}>Back</button>
+            <button type="submit" disabled={isLoading}>Next</button>
+            <button type="button" onClick={onCancel} disabled={isLoading}>Back</button>
           </div>
         </>
       )}
@@ -54,10 +71,11 @@ export default function RegisterForm({ onSuccess, onCancel }) {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
+            disabled={isLoading}
           />
           <div className="auth-buttons">
-            <button type="submit">Next</button>
-            <button type="button" onClick={back}>Back</button>
+            <button type="submit" disabled={isLoading}>Next</button>
+            <button type="button" onClick={back} disabled={isLoading}>Back</button>
           </div>
         </>
       )}
@@ -70,11 +88,14 @@ export default function RegisterForm({ onSuccess, onCancel }) {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
+            disabled={isLoading}
           />
-          {err && <div className="auth-error">{err}</div>}
+          {error && <div className="auth-error">{error}</div>}
           <div className="auth-buttons">
-            <button type="submit">Register</button>
-            <button type="button" onClick={back}>Back</button>
+            <button type="submit" disabled={isLoading}>
+              {isLoading ? "Registering..." : "Register"}
+            </button>
+            <button type="button" onClick={back} disabled={isLoading}>Back</button>
           </div>
         </>
       )}

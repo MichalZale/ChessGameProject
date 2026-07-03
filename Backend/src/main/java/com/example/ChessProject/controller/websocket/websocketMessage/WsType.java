@@ -5,6 +5,7 @@ public enum WsType {
     RESIGN,
     DRAW_PROPOSE,
     DRAW_ACCEPT,
+    DRAW_REJECT,
     CLOCK,
     RESULT
 }

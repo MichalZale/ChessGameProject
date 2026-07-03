@@ -1,5 +1,4 @@
 package com.example.ChessProject.controller.dto;
-
 import com.example.ChessProject.model.*;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +15,7 @@ public class GameResponse {
     private int      blackUserId;
     private Timer    timer;
     private boolean  isDrawOffered;
+    private int      drawOfferedByUserID;
     private List<Move> gameHistory;
     private String   gameResult;
 }

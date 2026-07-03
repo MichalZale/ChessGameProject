@@ -19,7 +19,7 @@ export function login(username, password) {
 
 export function register(username, password, email) {
     const data = { username, password, email };
-    
+
     return axios.post(`${API_URL}/register`, data)
         .then(res => res.data)
         .catch(error => {

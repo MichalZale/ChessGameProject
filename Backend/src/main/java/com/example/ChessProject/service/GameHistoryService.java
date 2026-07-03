@@ -1,8 +1,12 @@
 package com.example.ChessProject.service;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.example.ChessProject.data.*;
 import com.example.ChessProject.model.*;
 
+@Service
 public class GameHistoryService {
 
     private final GameHistoryRepository repo;
@@ -18,7 +22,7 @@ public class GameHistoryService {
     public List<String> getGamesByUser(int userID) {
         try {
             return repo.getHistoryByUser(userID);
-        } catch (Exception e) {            // wraps SQLException etc.
+        } catch (Exception e) {            
             throw new RuntimeException("Error retrieving game history for user " + userID, e);
         }
     }

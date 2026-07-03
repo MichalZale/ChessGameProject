@@ -16,6 +16,7 @@ public class GameResponseMapper {
                 .blackUserId(game.getBlackUserID())
                 .timer(game.getTimer())
                 .isDrawOffered(game.isDrawOffered())
+                .drawOfferedByUserID(game.getDrawOfferedByUserID())
                 .gameHistory(game.getGameHistory())
                 .gameResult(game.getGameResult().name())
                 .build();

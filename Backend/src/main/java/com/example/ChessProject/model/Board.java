@@ -31,7 +31,7 @@ public class Board {
                 if (piece != null) {
                     clone.board[r][c] = piece.clone();
                 } else {
-                    clone.board[r][c] = null; // Puste pole pozostaje puste
+                    clone.board[r][c] = null; 
                 }
             }
         }
