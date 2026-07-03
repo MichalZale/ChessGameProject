@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import Navbar from "./components/Navbar";
 import StartingMenu from "./components/StartingMenu";
 import LoginForm from "./components/LoginForm";
@@ -18,7 +17,7 @@ import { useChessWebSocket } from "./API/ChessWebSocket";
 import GameActionsPanel from "./components/GameActionsPanel";
 import "./components/GameActionsPanel.css";
 import { joinGame } from "./API/gameAPI"
-import { createGuestUser, login, register } from "./API/userAPI";
+import { createGuestUser } from "./API/userAPI";
 
 const WS_MSG_TYPES = {
   MOVE: "MOVE",
@@ -156,9 +155,10 @@ function App() {
   return (
     <div className="app">
       <Navbar
+        user={user}
         isLoggedIn={Boolean(user)}
         isGuest={Boolean(user) && isGuestUser(user)}
-        onProfileClick={() => alert("profile!")}
+        onProfileClick={() => setScreen("profile")}
         onLoginClick={() => setScreen("login")}
         onRegisterClick={() => setScreen("register")}
         onLogout={() => {
@@ -168,21 +168,30 @@ function App() {
         }}
       />
 
-      {user && !isGuestUser(user) && (
-        <div style={{
-          background: "#e3e8f0",
-          color: "#234",
-          padding: "8px 16px",
-          fontWeight: 600,
-          fontSize: "1.05em",
-          borderBottom: "1px solid #b8c2cc"
-        }}>
-          Logged in as: <span style={{ color: "#3578c0" }}>{user.username}</span>
-          {" "} (ID: <span style={{ color: "#3578c0" }}>{user.userID ?? user.id}</span>)
-        </div>
-      )}
-
       <main className="main-content">
+        {screen === "profile" && user && !isGuestUser(user) && (
+          <section className="profile-panel">
+            <h1>Profile</h1>
+            <div className="profile-details">
+              <div>
+                <span>Username</span>
+                <strong>{user.username}</strong>
+              </div>
+              <div>
+                <span>User ID</span>
+                <strong>{getUserId(user)}</strong>
+              </div>
+              {user.email && (
+                <div>
+                  <span>Email</span>
+                  <strong>{user.email}</strong>
+                </div>
+              )}
+            </div>
+            <button onClick={() => setScreen("menu")}>Back</button>
+          </section>
+        )}
+
         {screen === "login" && (
           <LoginForm
             onSuccess={(userData) => { 
@@ -284,7 +293,7 @@ function App() {
                 } else {
                   alert("Could not join game. Invalid code or game is full.");
                 }
-              } catch (err) {
+              } catch {
                 alert("Could not join game. Invalid code or game is full.");
               }
             }}

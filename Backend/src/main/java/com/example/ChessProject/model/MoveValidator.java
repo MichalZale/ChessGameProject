@@ -39,7 +39,7 @@ public abstract class MoveValidator {
     protected abstract boolean canAttack(Position from, Position target, Board b);
 
     public boolean isInCheck(GameState gs, Color kingColor) {
-        Position kingPos = findKing(kingColor);
+        Position kingPos = findKing(gs, kingColor);
         Color attacker = (kingColor == Color.WHITE) ? Color.BLACK : Color.WHITE;
         return isSquareAttacked(kingPos, attacker, gs);
     }
@@ -191,11 +191,11 @@ public abstract class MoveValidator {
         return sim;
     }
 
-    protected Position findKing(Color c) {
+    protected Position findKing(GameState gs, Color c) {
         for (int r = 0; r < 8; r++)
             for (int col = 0; col < 8; col++) {
                 Position p = new Position(r, col);
-                Piece pc = board.getPiece(p);
+                Piece pc = gs.getBoard().getPiece(p);
                 if (pc instanceof King && pc.getColor() == c)
                     return p;
             }

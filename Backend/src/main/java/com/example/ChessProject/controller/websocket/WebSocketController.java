@@ -1,5 +1,6 @@
 package com.example.ChessProject.controller.websocket;
 
+import com.example.ChessProject.controller.dto.ApiError;
 import com.example.ChessProject.controller.dto.GameResponse;
 import com.example.ChessProject.controller.dto.GameResponseMapper;
 import com.example.ChessProject.controller.websocket.websocketMessage.WsMessage;
@@ -21,10 +22,13 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 
 @Controller
 public class WebSocketController {
+    private static final Logger log = LoggerFactory.getLogger(WebSocketController.class);
 
     private final GameService gameService;
     private final SimpMessagingTemplate messagingTemplate;
@@ -45,13 +49,8 @@ public class WebSocketController {
             Game updatedGame;
             switch (type) {
                 case MOVE:
-                    System.out.print("Otrzymano wiadomość MOVE!");
                     Move move = parseMove(msg.getPayload(), gameId);
-                    System.out.print("Ruch" + move);
                     updatedGame = gameService.makeMove(gameId, userId, move);
-                    System.out.println("Ruszono się.");
-                    System.out.println("Stan planszy przed wysłaniem odpowiedzi:");
-                    System.out.println(updatedGame.getGameState().getBoard().toString());
                     break;
 
                 case RESIGN:
@@ -60,13 +59,6 @@ public class WebSocketController {
 
                 case DRAW_PROPOSE:
                     updatedGame = gameService.proposeDraw(gameId, userId);
-                    if (updatedGame != null) {
-                        System.out.println("WebSocketController: updatedGame after proposeDraw - isDrawOffered: "
-                                + updatedGame.isDrawOffered() + ", drawOfferedByUserID: "
-                                + updatedGame.getDrawOfferedByUserID());
-                    } else {
-                        System.out.println("WebSocketController: updatedGame is NULL after proposeDraw!");
-                    }
                     break;
 
                 case DRAW_ACCEPT:
@@ -81,30 +73,14 @@ public class WebSocketController {
                     throw new IllegalArgumentException("Unsupported WebSocket message type: " + type);
             }
             GameResponse response = GameResponseMapper.toGameResponse(updatedGame);
-            System.out.println("<<<<< WebSocket Sending (WebSocketController) >>>>>");
-            if (response != null) {
-                System.out.println("Response to be sent: gameId=" + response.getGameId() +
-                        ", isDrawOffered=" + response.isDrawOffered() + // KLUCZOWY LOG
-                        ", drawOfferedByUserID=" + response.getDrawOfferedByUserID());
-                // Możesz też zalogować cały obiekt, jeśli masz skonfigurowanego Jacksona do
-                // ładnego drukowania lub użyć jego metody toString()
-                // com.fasterxml.jackson.databind.ObjectMapper objectMapper = new
-                // com.fasterxml.jackson.databind.ObjectMapper();
-                // System.out.println("Full response JSON: " +
-                // objectMapper.writeValueAsString(response));
-            } else {
-                System.out.println("Response to be sent is NULL!");
-            }
-
             messagingTemplate.convertAndSend("/topic/game-" + gameId, response);
-            System.out.println("Wysłano zaktualizowany stan gry dla typu: " + type);
+            log.debug("Sent game {} update for message type {}", gameId, type);
 
         } catch (Exception e) {
-            System.err.println(
-                    "Error processing WebSocket message for game " + gameId + ", type " + type + ": " + e.getMessage());
-            e.printStackTrace();
-
-            messagingTemplate.convertAndSend("/topic/game-" + gameId, Map.of("error", e.getMessage()));
+            log.warn("Could not process WebSocket message for game {} and type {}: {}",
+                    gameId, type, e.getMessage());
+            messagingTemplate.convertAndSend("/topic/game-" + gameId,
+                    new ApiError("WEBSOCKET_ERROR", e.getMessage(), 400, "/topic/game-" + gameId));
         }
     }
 
@@ -142,22 +118,18 @@ public class WebSocketController {
 
             if (moveType == Move.MoveType.PROMOTION && promoObj instanceof String) {
                 String promotionToString = (String) promoObj;
-                System.out.println("Promotion detected. promotionToString: " + promotionToString);
 
                 Game game = gameService.getGameState(gameId);
                 if (game == null) {
-                    System.err.println("Game not found with id: " + gameId + " during promotion parsing.");
                     throw new IllegalStateException("Game not found for promotion: " + gameId);
                 }
 
                 Piece pieceBeingPromoted = game.getGameState().getBoard().getPiece(fromPos);
                 if (pieceBeingPromoted == null || !(pieceBeingPromoted instanceof Pawn)) {
-                    System.err.println("No pawn found at promotion source square " + fromPos + " for game " + gameId);
                     throw new IllegalStateException("Pawn not found at promotion source square: " + fromPos);
                 }
 
                 Color pawnColor = pieceBeingPromoted.getColor();
-                System.out.println("Pawn color for promotion: " + pawnColor);
 
                 switch (promotionToString.toUpperCase()) {
                     case "QUEEN":
@@ -173,25 +145,17 @@ public class WebSocketController {
                         promotionToPiece = new Knight(pawnColor, toPos);
                         break;
                     default:
-                        System.err.println(
-                                "Invalid promotion piece string: " + promotionToString + " for game " + gameId);
                         throw new IllegalArgumentException("Invalid piece type for promotion: " + promotionToString);
                 }
-                System.out.println("Created promotion piece: " + promotionToPiece);
 
             } else if (moveType == Move.MoveType.PROMOTION && promoObj == null) {
-                System.err
-                        .println("Promotion move type specified but no promotionTo piece provided for game " + gameId);
                 throw new IllegalArgumentException("Promotion move type specified but no promotionTo piece provided.");
             } else if (moveType == Move.MoveType.PROMOTION && !(promoObj instanceof String)) {
-                System.err.println("Promotion move type specified but promotionTo is not a String: " + promoObj
-                        + " for game " + gameId);
                 throw new IllegalArgumentException("Invalid format for promotionTo field.");
             }
 
             return new Move(fromPos, toPos, promotionToPiece, moveType);
         }
-        System.out.println("Invalid payload for move: payload is not an instance of Map. Payload:" + payload);
         throw new IllegalArgumentException("Invalid payload for move: not a Map");
     }
 }

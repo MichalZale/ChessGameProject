@@ -13,6 +13,9 @@ public class Board {
     }
 
     public void setPiece(Position pos, Piece piece){
+        if (piece != null) {
+            piece.setPosition(pos);
+        }
         board[pos.row][pos.column] = piece;
     }
 
@@ -30,6 +33,7 @@ public class Board {
                 Piece piece = this.board[r][c];
                 if (piece != null) {
                     clone.board[r][c] = piece.clone();
+                    clone.board[r][c].setPosition(new Position(r, c));
                 } else {
                     clone.board[r][c] = null; 
                 }

@@ -25,6 +25,52 @@
     border-radius: 5px;
 }
 
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #dce6f2;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.nav-username {
+    font-weight: 700;
+}
+
+.nav-user-id {
+    color: #9fb0c4;
+    font-size: 0.85rem;
+}
+
 .nav-right .nav-btn:hover {
     background-color: #444;
+}
+
+@media (max-width: 640px) {
+    .navbar {
+        padding: 0 12px;
+    }
+
+    .nav-left {
+        font-size: 1rem;
+    }
+
+    .nav-right {
+        gap: 6px;
+    }
+
+    .nav-user-id {
+        display: none;
+    }
+
+    .nav-right .nav-btn {
+        padding: 5px 8px;
+    }
 }

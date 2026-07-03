@@ -5,8 +5,12 @@ import java.util.List;
 import com.example.ChessProject.model.validators.KingValidator;
 
 import java.util.ArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Game {
+    private static final Logger log = LoggerFactory.getLogger(Game.class);
+
     public enum GameStatus {
         ACTIVE,
         FINISHED,
@@ -114,34 +118,43 @@ public class Game {
             this.drawOfferedByUserID = -1;
         }
 
-        System.out.println("makeMove wywołane z: " + mv + " przez gracza " + userID);         Piece piece = game.getBoard().getPiece(mv.getFrom());
-        System.out.println("Piece: " + piece);
+        log.debug("Move requested in game {} by user {}: {}", gameID, userID, mv);
+        Piece piece = game.getBoard().getPiece(mv.getFrom());
+        log.debug("Piece at move source {}: {}", mv.getFrom(), piece);
 
         if (piece == null) {
-            System.out.println("Brak pionka na pozycji " + mv.getFrom());
-                        throw new IllegalArgumentException("No piece at starting position: " + mv.getFrom());
+            throw new IllegalArgumentException("No piece at starting position: " + mv.getFrom());
         }
 
         MoveValidator validator = MoveValidatorFactory.getValidator(piece, game);
 
         if (!validator.isValidMove(mv)) {
-            System.out.println("Ruch niepoprawny: " + mv);
-                        throw new IllegalArgumentException("Invalid move: " + mv);
+            throw new IllegalArgumentException("Invalid move: " + mv);
         }
 
-                        GameState newGameState = validator.simulateMove(mv);
+        GameState newGameState = validator.simulateMove(mv);
         this.game = newGameState; 
-        System.out.println("Ruch wykonany, plansza zmieniona! Nowa tura: " + this.game.getSideToMove());
+        log.debug("Move applied in game {}. Next side to move: {}", gameID, this.game.getSideToMove());
         gameHistory.add(mv);
 
-                                                                                        
-                                                        
-        MoveValidator postMoveValidatorForWhite = MoveValidatorFactory.getValidator(null, this.game);                                                                                                                                                                                                                     MoveValidator stateChecker = new KingValidator(this.game);
+        MoveValidator stateChecker = new KingValidator(this.game);
+        boolean checkmate = stateChecker.isCheckmate();
+        boolean stalemate = stateChecker.isStalemate();
+        log.debug(
+                "Post-move state for game {}: sideToMove={}, checkmate={}, stalemate={}",
+                gameID,
+                this.game.getSideToMove(),
+                checkmate,
+                stalemate);
 
-                if (stateChecker.isCheckmate()) {             this.gameResult = GameResult.CHECKMATE;
+        if (checkmate) {
+            this.gameResult = GameResult.CHECKMATE;
             this.status = GameStatus.FINISHED;
-                                                        } else if (stateChecker.isStalemate()) {             this.gameResult = GameResult.STALEMATE;
+            log.info("Game {} finished by checkmate.", gameID);
+        } else if (stalemate) {
+            this.gameResult = GameResult.STALEMATE;
             this.status = GameStatus.FINISHED;
+            log.info("Game {} finished by stalemate.", gameID);
         }
     }
 

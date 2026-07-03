@@ -1,6 +1,8 @@
 import "./Navbar.css";
 
-export default function Navbar({ isLoggedIn, isGuest, onLoginClick, onRegisterClick, onProfileClick, onLogout }) {
+export default function Navbar({ user, isLoggedIn, isGuest, onLoginClick, onRegisterClick, onProfileClick, onLogout }) {
+  const userId = user?.userID ?? user?.id;
+
   return (
     <nav className="navbar">
       <div className="nav-left">
@@ -9,6 +11,10 @@ export default function Navbar({ isLoggedIn, isGuest, onLoginClick, onRegisterCl
       <div className="nav-right">
         {isLoggedIn && !isGuest && (
           <>
+            <div className="nav-user">
+              <span className="nav-username">{user.username}</span>
+              <span className="nav-user-id">ID: {userId}</span>
+            </div>
             <button className="nav-btn" onClick={onProfileClick}>
               Profile
             </button>
@@ -34,4 +40,3 @@ export default function Navbar({ isLoggedIn, isGuest, onLoginClick, onRegisterCl
     </nav>
   );
 }
-

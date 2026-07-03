@@ -17,7 +17,7 @@ public class KingValidator extends MoveValidator {
 
         int dr=Math.abs(to.row-from.row);
         int dc=Math.abs(to.column-from.column);
-        if (move.getMoveType() == Move.MoveType.CASTLE_KINGSIDE || move.getMoveType() == Move.MoveType.CASTLE_QUEENSIDE) {
+        if (dr == 0 && dc == 2) {
             if (dr != 0 || dc != 2) return false; 
 
             if(!isCastlingLineSafe(from,to,st)) return false;
