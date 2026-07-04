@@ -130,14 +130,7 @@ http://127.0.0.1:5174
 
 ## Playing With A Friend
 
-The app works locally first: both players can use the same machine/browser or
-two browsers pointed at the same local frontend. To play from different
-computers, the friend must be able to reach both:
-
-- the frontend, usually port `5174`
-- the backend REST/WebSocket server, port `8080`
-
-The current code still has local URLs in the frontend:
+The current code has local URLs in the frontend:
 
 - `VITE_API_BASE_URL` defaults to `http://localhost:8080`
 - `VITE_WS_URL` defaults to `ws://localhost:8080/ws`
@@ -145,69 +138,16 @@ The current code still has local URLs in the frontend:
 For internet play, these values must point to the public backend tunnel URL,
 not to `localhost`.
 
-### Same Wi-Fi / LAN
+### Public Link With Cloudflare Tunnel
 
-This is the simplest private setup.
+For remote gameplay, you can use Cloudflare Tunnel. There are two
+different tunnels because there are two different things to expose:
 
-1. Find the host computer's local IP address, for example `192.168.1.20`.
-2. Start the backend on the host computer:
+- the backend tunnel exposes the API and WebSocket server on `8080`;
+- the frontend tunnel exposes the Vite page on `5174`.
 
-   ```powershell
-   cd Backend
-   mvn spring-boot:run
-   ```
-
-3. Start the frontend so other devices can reach it:
-
-   ```powershell
-   cd Frontend
-   npm run dev -- --host 0.0.0.0 --port 5174
-   ```
-
-4. Change frontend API URLs from `localhost` to the host IP:
-
-   ```text
-   http://192.168.1.20:8080
-   ws://192.168.1.20:8080/ws
-   ```
-
-5. Add the frontend origin to backend CORS/WebSocket allowed origins:
-
-   ```text
-   http://192.168.1.20:5174
-   ```
-
-6. Your friend opens:
-
-   ```text
-   http://192.168.1.20:5174
-   ```
-
-This may require allowing ports `5174` and `8080` through the host firewall.
-
-### Public Link With A Tunnel
-
-For a quick internet-accessible demo, use a tunneling tool such as ngrok or
-Cloudflare Tunnel. You need two public URLs:
-
-- one tunnel for the frontend on `5174`
-- one tunnel for the backend on `8080`
-
-The backend already allows local development origins and common temporary
-tunnel domains:
-
-```text
-https://*.ngrok-free.app
-https://*.trycloudflare.com
-```
-
-If you use another tunnel provider or a custom domain, add it to:
-
-```properties
-app.cors.allowed-origin-patterns=...
-```
-
-#### Example With Cloudflare Tunnel
+Put the **backend tunnel URL** in `Frontend/.env.local`. Send the
+**frontend tunnel URL** to the other player.
 
 Terminal 1, start the backend:
 
@@ -235,6 +175,20 @@ VITE_API_BASE_URL=https://backend-example.trycloudflare.com
 VITE_WS_URL=wss://backend-example.trycloudflare.com/ws
 ```
 
+Use the real URL printed by `cloudflared`, not `backend-example`. For example,
+if the backend tunnel prints:
+
+```text
+https://showers-acute-cowboy-machines.trycloudflare.com
+```
+
+then `Frontend/.env.local` should be:
+
+```env
+VITE_API_BASE_URL=https://showers-acute-cowboy-machines.trycloudflare.com
+VITE_WS_URL=wss://showers-acute-cowboy-machines.trycloudflare.com/ws
+```
+
 Terminal 3, start the frontend:
 
 ```powershell
@@ -248,45 +202,41 @@ Terminal 4, expose the frontend:
 cloudflared tunnel --url http://localhost:5174
 ```
 
-Send your friend the public frontend URL. Both players should open the same
-frontend URL, then one player creates a game and shares the invite code.
+Copy the frontend tunnel hostname from Terminal 4, without `https://`, and add
+it to `Frontend/vite.config.js`. Vite blocks unknown public hosts unless they
+are listed in `server.allowedHosts`.
 
-#### Example With ngrok
+For example, if the frontend tunnel is:
 
-Terminal 1:
-
-```powershell
-cd Backend
-mvn spring-boot:run
+```text
+https://retrieval-inspections-mega-mixed.trycloudflare.com
 ```
 
-Terminal 2:
+then `Frontend/vite.config.js` should contain:
 
-```powershell
-ngrok http 8080
+```js
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5174,
+    allowedHosts: [
+      'retrieval-inspections-mega-mixed.trycloudflare.com'
+    ]
+  }
+})
 ```
 
-Create `Frontend/.env.local` with the ngrok backend URL:
+After changing `vite.config.js`, restart the frontend dev server from Terminal
+3.
 
-```env
-VITE_API_BASE_URL=https://backend-example.ngrok-free.app
-VITE_WS_URL=wss://backend-example.ngrok-free.app/ws
-```
+Copy the frontend tunnel URL from Terminal 4 and send that URL to your friend.
+Both players open the frontend tunnel URL in a browser. One player creates a
+game and shares the invite code with the other player.
 
-Terminal 3:
-
-```powershell
-cd Frontend
-npm run dev -- --host 0.0.0.0 --port 5174
-```
-
-Terminal 4:
-
-```powershell
-ngrok http 5174
-```
-
-Send the frontend ngrok URL to your friend.
+Keep all four terminals running while you play. If you stop either
+`cloudflared` process and start it again, it creates a new public URL. If the
+backend tunnel changes, update `Frontend/.env.local` and restart the frontend
+dev server.
 
 This is convenient for demos, but it is not a production deployment.
 
@@ -318,14 +268,10 @@ npm run lint
 npm run build
 ```
 
-Current known frontend lint note: `Chessboard.jsx` exports both a React
-component and a helper function, so Vite's Fast Refresh ESLint rule emits a
-warning. The build still succeeds.
-
 ## Development Notes
 
 - The backend logs through Spring Boot's SLF4J/Logback logging stack.
 - API errors use a structured response body with fields such as `code`,
   `message`, `status`, `path`, and `timestamp`.
 - The project currently permits all Spring Security requests; production-ready
-  authentication is not yet implemented.
+  authentication is not implemented.
